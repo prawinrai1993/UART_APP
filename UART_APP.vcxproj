@@ -189,6 +189,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="UART_APP.h" />
     <ClInclude Include="UART_APPDlg.h" />
+    <ClInclude Include="UART_Configuration.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -199,6 +200,7 @@
     </ClCompile>
     <ClCompile Include="UART_APP.cpp" />
     <ClCompile Include="UART_APPDlg.cpp" />
+    <ClCompile Include="UART_Configuration.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="UARTAPP.rc" />
@@ -207,6 +209,12 @@
     <None Include="res\UARTAPP.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="icons\connection.ico" />
+    <Image Include="icons\disconnect.ico" />
+    <Image Include="icons\exit.ico" />
+    <Image Include="icons\setting.ico" />
+    <Image Include="icons\uart.ico" />
+    <Image Include="res\toolbar1.bmp" />
     <Image Include="res\UART_APP.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

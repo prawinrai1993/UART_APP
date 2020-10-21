@@ -33,6 +33,9 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UART_Configuration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="UART_APP.cpp">
@@ -42,6 +45,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UART_Configuration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -57,6 +63,24 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\UART_APP.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\toolbar1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\connection.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\disconnect.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\exit.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\setting.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\uart.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -7,11 +7,17 @@
 #include "UART_APP.h"
 #include "UART_APPDlg.h"
 #include "afxdialogex.h"
+#include "cstring"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+static UINT BASED_CODE indicators[] =
+{
+	IDS_STATUS,
+	IDS_COMPORT
+};
 
 // CAboutDlg dialog used for App About
 
@@ -47,28 +53,69 @@ END_MESSAGE_MAP()
 
 
 
-// CConfigure dialog used for CONFIGURE dialog
 
-class CConfigureDlg : public CDialogEx
+CConfigureDlg::CConfigureDlg(UART_Configuration* uart_config) : CDialogEx(IDD_CONFIGURE_DIALOG)
 {
-public:
-	CConfigureDlg();
+	ptr_uart_config = uart_config;
+}
 
-	// Dialog Data
-#ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_CONFIGURE_DIALOG};
-#endif
-
-protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
-
-// Implementation
-protected:
-	DECLARE_MESSAGE_MAP()
-};
-
-CConfigureDlg::CConfigureDlg() : CDialogEx(IDD_CONFIGURE_DIALOG)
+CConfigureDlg::~CConfigureDlg()
 {
+
+}
+
+BOOL CConfigureDlg::OnInitDialog()
+{
+	CDialogEx::OnInitDialog();
+	CComboBox* m_comboComport = (CComboBox*)GetDlgItem(IDC_COMBO_COMPORT);
+
+	for (int i = 1; i < 20; i++)
+	{
+		CString port_number;
+		port_number.Format(_T("%d"), i);
+		m_comboComport->AddString(CString(_T("COM") + port_number));
+	}
+	
+	m_comboComport->SetCurSel(m_comboComport->FindStringExact(0, ptr_uart_config->getComPort()));
+
+	CComboBox* m_comboBaudrate = (CComboBox*)GetDlgItem(IDC_COMBO_BAUDRATE);
+    m_comboBaudrate->AddString(CString(_T("9600")));
+    m_comboBaudrate->AddString(CString(_T("14400")));
+    m_comboBaudrate->AddString(CString(_T("19200")));
+    m_comboBaudrate->AddString(CString(_T("38400")));
+    m_comboBaudrate->AddString(CString(_T("57600")));
+    m_comboBaudrate->AddString(CString(_T("115200")));
+    m_comboBaudrate->AddString(CString(_T("128000")));
+
+	m_comboBaudrate->SetCurSel(m_comboBaudrate->FindStringExact(0, ptr_uart_config->getBaudRate()));
+
+	CComboBox* m_comboBits = (CComboBox*)GetDlgItem(IDC_COMBO_DATA_BITS);
+	m_comboBits->AddString(CString(_T("5")));
+	m_comboBits->AddString(CString(_T("6")));
+	m_comboBits->AddString(CString(_T("7")));
+	m_comboBits->AddString(CString(_T("8")));
+
+	m_comboBits->SetCurSel(m_comboBits->FindStringExact(0, ptr_uart_config->getByteSize()));
+
+
+	CComboBox* m_comboParity = (CComboBox*)GetDlgItem(IDC_COMBO_PARITY);
+	m_comboParity->AddString(CString(_T("NONE")));
+	m_comboParity->AddString(CString(_T("EVEN")));
+	m_comboParity->AddString(CString(_T("ODD")));
+	m_comboParity->AddString(CString(_T("MARK")));
+	m_comboParity->AddString(CString(_T("SPACE")));
+
+	m_comboParity->SetCurSel(m_comboParity->FindStringExact(0, ptr_uart_config->getParity()));
+
+	CComboBox* m_comboStopBits = (CComboBox*)GetDlgItem(IDC_COMBO_STOP_BITS);
+	m_comboStopBits->AddString(CString(_T("1")));
+	m_comboStopBits->AddString(CString(_T("1.5")));
+	m_comboStopBits->AddString(CString(_T("2")));
+
+	m_comboStopBits->SetCurSel(m_comboStopBits->FindStringExact(0, ptr_uart_config->getStopBits()));
+
+	return TRUE;  // return TRUE  unless you set the focus to a control
+
 }
 
 void CConfigureDlg::DoDataExchange(CDataExchange* pDX)
@@ -77,6 +124,8 @@ void CConfigureDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CConfigureDlg, CDialogEx)
+	ON_BN_CLICKED(IDOK, &CConfigureDlg::OnBnClickedOk)
+	ON_BN_CLICKED(IDCANCEL, &CConfigureDlg::OnBnClickedCancel)
 END_MESSAGE_MAP()
 
 
@@ -89,7 +138,16 @@ END_MESSAGE_MAP()
 CUARTAPPDlg::CUARTAPPDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_UART_APP_DIALOG, pParent)
 {
-	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_hIcon = AfxGetApp()->LoadIcon(IDI_ICON_UART);
+
+	m_thread_created = false;
+	receive_status = false;
+	// get some color brush
+	m_redcolor = RGB(255, 0, 0);                      // red
+	m_bluecolor = RGB(0, 0, 255);                     // blue
+	m_textcolor = RGB(255, 255, 255);                 // white text
+	m_redbrush.CreateSolidBrush(m_redcolor);      // red background
+	m_bluebrush.CreateSolidBrush(m_bluecolor);    // blue background
 }
 
 void CUARTAPPDlg::DoDataExchange(CDataExchange* pDX)
@@ -105,6 +163,12 @@ BEGIN_MESSAGE_MAP(CUARTAPPDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_SW2, &CUARTAPPDlg::OnBnClickedButtonSw2)
 	ON_BN_CLICKED(IDC_BUTTON_SW3, &CUARTAPPDlg::OnBnClickedButtonSw3)
 	ON_COMMAND(ID_TOOLS_CONFIGURE, &CUARTAPPDlg::OnToolsConfigure)
+	ON_COMMAND(ID_HELP_ABOUT, &CUARTAPPDlg::OnHelpAbout)
+	ON_COMMAND(ID_TOOLS_CLEAR, &CUARTAPPDlg::OnToolsClear)
+	ON_COMMAND(ID_MENU_CONNECT, &CUARTAPPDlg::OnMenuConnect)
+	ON_COMMAND(ID_CALLS_DISC, &CUARTAPPDlg::OnMenuDisconnect)
+	ON_COMMAND(ID_CONFIGURE_EXIT, &CUARTAPPDlg::OnConfigureExit)
+	ON_BN_CLICKED(IDC_BUTTON_SEND, &CUARTAPPDlg::OnBnClickedButtonSend)
 END_MESSAGE_MAP()
 
 
@@ -116,11 +180,13 @@ BOOL CUARTAPPDlg::OnInitDialog()
 
 	// Add "About..." menu item to system menu.
 
+
 	// IDM_ABOUTBOX must be in the system command range.
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
 
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
+	
 	if (pSysMenu != nullptr)
 	{
 		BOOL bNameValid;
@@ -140,6 +206,25 @@ BOOL CUARTAPPDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
+	m_bar.Create(this); //We create the status bar
+	
+	m_bar.SetIndicators(indicators, 2); //Set the number of panes 
+
+	CRect rect;
+	GetClientRect(&rect);
+	//Size the two panes
+	m_bar.SetPaneInfo(0, IDS_STATUS,
+		SBPS_NORMAL, rect.Width() - 100);
+	m_bar.SetPaneInfo(1, IDS_COMPORT, SBPS_STRETCH, 0);
+
+	//This is where we actually draw it on the screen
+	RepositionBars(AFX_IDW_CONTROLBAR_FIRST, AFX_IDW_CONTROLBAR_LAST,
+		IDS_COMPORT);
+	m_bar.GetStatusBarCtrl().SetBkColor(RGB(180, 180, 180));
+	CString str1 = CString(_T(""));
+	CString str2 = CString(_T("disconnected"));
+	m_bar.SetPaneText(1, str1);
+	m_bar.SetPaneText(0, str2);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -215,6 +300,140 @@ void CUARTAPPDlg::OnBnClickedButtonSw3()
 
 void CUARTAPPDlg::OnToolsConfigure()
 {
-	CConfigureDlg dlgConfigure;
+	CConfigureDlg dlgConfigure(&m_uart_config);
 	dlgConfigure.DoModal();
+}
+
+
+void CUARTAPPDlg::OnHelpAbout()
+{
+	CAboutDlg dlgAbout;
+	dlgAbout.DoModal();
+}
+
+
+void CUARTAPPDlg::OnToolsClear()
+{
+	CEdit* m_editTerminal = (CEdit*)GetDlgItem(IDC_EDIT_TERMINAL);
+	m_editTerminal->SetWindowTextW(CString(""));
+}
+
+UINT receiveThread(void* class_ptr)
+{
+	CUARTAPPDlg* m_class = (CUARTAPPDlg*)class_ptr;
+	while(m_class->receive_status)
+		m_class->readRXData();
+	return 0;
+}
+
+void CUARTAPPDlg::readRXData()
+{
+	CString readData = m_uart_config.read();
+	CEdit* m_editTerminal = (CEdit*)GetDlgItem(IDC_EDIT_TERMINAL);
+
+	// get the initial text length
+	int nLength = m_editTerminal->GetWindowTextLength();
+	// put the selection at the end of text
+	m_editTerminal->SetSel(nLength, nLength);
+	// replace the selection
+	m_editTerminal->ReplaceSel(readData);
+
+
+}
+
+void CUARTAPPDlg::OnMenuConnect()
+{
+	m_uart_config.setDCB();
+	m_uart_config.connect();
+	receive_status = true;
+	// start thread to receive data
+	if (m_thread_created == false)
+	{
+		AfxBeginThread(receiveThread, this);
+		m_thread_created = true;
+	}
+	CString str1 = m_uart_config.getComPort();
+	CString str2 = CString(_T("connected"));
+	m_bar.SetPaneText(1, str1);
+	m_bar.SetPaneText(0, str2);
+}
+
+
+
+
+void CUARTAPPDlg::OnMenuDisconnect()
+{
+	receive_status = false;
+	m_uart_config.disconnect();
+	//as thread exit
+	m_thread_created = false;
+	CString str1 = CString(_T(""));
+	CString str2 = CString(_T("disconnected"));
+	m_bar.SetPaneText(1, str1);
+	m_bar.SetPaneText(0, str2);
+}
+
+
+void CUARTAPPDlg::OnConfigureExit()
+{
+	// TODO: Add your command handler code here
+
+}
+
+
+
+void CConfigureDlg::OnBnClickedOk()
+{
+	CComboBox* m_COMPORT = (CComboBox*)GetDlgItem(IDC_COMBO_COMPORT);
+	CString com_name;
+	int index = m_COMPORT->GetCurSel();
+	m_COMPORT->GetLBText(index, com_name);
+	ptr_uart_config->setBaudRate(com_name);
+
+	CComboBox* m_BAUDRATE = (CComboBox*)GetDlgItem(IDC_COMBO_BAUDRATE);
+	CString baud_rate;
+	index = m_BAUDRATE->GetCurSel();
+	m_BAUDRATE->GetLBText(index, baud_rate);
+	ptr_uart_config->setBaudRate(baud_rate);
+
+
+	CComboBox* m_DATABITS = (CComboBox*)GetDlgItem(IDC_COMBO_DATA_BITS);
+	CString databits_str;
+	index = m_DATABITS->GetCurSel();
+	m_DATABITS->GetLBText(index, databits_str);
+	ptr_uart_config->setByteSize(databits_str);
+
+
+	CComboBox* m_PARITY = (CComboBox*)GetDlgItem(IDC_COMBO_PARITY);
+	CString parity_str;
+	index = m_PARITY->GetCurSel();
+	m_PARITY->GetLBText(index, parity_str);
+	ptr_uart_config->setParity(parity_str);
+
+
+	CComboBox* m_STOPBITS = (CComboBox*)GetDlgItem(IDC_COMBO_STOP_BITS);
+	CString stopbits_str;
+	index = m_STOPBITS->GetCurSel();
+	m_STOPBITS->GetLBText(index, stopbits_str);
+	ptr_uart_config->setStopBits(stopbits_str);
+	
+	// TODO: Add your control notification handler code here
+	CDialogEx::OnOK();
+}
+
+
+void CConfigureDlg::OnBnClickedCancel()
+{
+	// TODO: Add your control notification handler code here
+	CDialogEx::OnCancel();
+}
+
+
+void CUARTAPPDlg::OnBnClickedButtonSend()
+{
+	CEdit* m_sen_edit = (CEdit*)GetDlgItem(IDC_EDIT_SEND_DATA);
+	CString sendData;
+	m_sen_edit->GetWindowTextW(sendData);
+	m_uart_config.write(sendData);
+	m_sen_edit->SetWindowTextW(CString(""));
 }

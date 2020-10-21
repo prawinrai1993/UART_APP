@@ -9,6 +9,13 @@
 #define IDR_MAINFRAME                   128
 #define IDR_MENU1                       130
 #define IDD_CONFIGURE_DIALOG            131
+#define IDI_ICON_CONNECT                143
+#define IDI_ICON_DICONNECT              144
+#define IDI_ICON_EXIT                   145
+#define IDI_ICON_CONFIGURE              146
+#define IDI_ICON_UART                   147
+#define IDS_STATUS                      148
+#define IDS_COMPORT                     149
 #define IDC_BUTTON_SEND                 1001
 #define IDC_EDIT_SEND_DATA              1002
 #define IDC_RICHEDIT_TERMINAL           1003
@@ -27,6 +34,8 @@
 #define IDC_COMBO_FLOW_CONTROL          1017
 #define IDC_COMBO_COMPORT               1018
 #define IDC_EDIT1                       1019
+#define IDC_EDIT_TERMINAL               1019
+#define IDC_MFCVSLISTBOX1               1020
 #define ID_CONFIGURE_CONNECT            32771
 #define ID_CONFIGURE_EXIT               32772
 #define ID_MENU_CONNECT                 32773
@@ -39,9 +48,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         32778
-#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_RESOURCE_VALUE        150
+#define _APS_NEXT_COMMAND_VALUE         32780
+#define _APS_NEXT_CONTROL_VALUE         1021
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
