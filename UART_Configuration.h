@@ -26,7 +26,7 @@ public:
 	void setByteSize(CString val);
 	void setParity(CString val);
 	void setStopBits(CString val);
-	void setDCB();
+	bool setDCB();
 	CString getComPort();
 	CString getBaudRate();
 	CString getByteSize();
@@ -35,7 +35,7 @@ public:
 
 	void connect();
 	void disconnect();
-	CString read();
+	char * read();
 	void write(CString sendString);
 
 };

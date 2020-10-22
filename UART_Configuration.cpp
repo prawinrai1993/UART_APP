@@ -5,6 +5,14 @@
 #include "UART_CONFIGURATION.h"
 #include "pch.h"
 
+
+const int DATA_SIZE = 3;
+
+const char DLE[1] = { 0x10 };
+const char STX[1] = { 0x02 };
+const char ETX[1] = { 0x03 };
+
+
 UART_Configuration::UART_Configuration()
 {
 	// variables used with the com port
@@ -105,7 +113,7 @@ CString UART_Configuration::getStopBits()
 	return m_StopBits;
 }
 
-void UART_Configuration::setDCB()
+bool UART_Configuration::setDCB()
 {
 	m_hCom = CreateFile(m_sComPort,
 		GENERIC_READ | GENERIC_WRITE,
@@ -117,6 +125,12 @@ void UART_Configuration::setDCB()
 
 	m_bPortReady = SetupComm(m_hCom, 128, 128); // set buffer sizes
 	m_bPortReady = GetCommState(m_hCom, &m_dcb);
+
+	if (!m_bPortReady)
+	{
+		AfxMessageBox(_T("COMPORT cannot be connected!"), MB_OK | MB_ICONSTOP);
+		return false;
+	}
 
 }
 void UART_Configuration::connect()
@@ -141,16 +155,59 @@ void UART_Configuration::disconnect()
 
 }
 
-CString UART_Configuration::read()
+char * UART_Configuration::read()
 {
 	CString bufferString;
-	bReadRC = ReadFile(m_hCom, &sBuffer, 128, &iBytesRead, NULL);
-	if(iBytesRead)
-		bufferString =sBuffer;
-	else
-		bufferString = "";
-	memset(sBuffer, 0, 128);
-	return bufferString;
+	static char data_buffer[3] = {0,0,0};
+	char byte_data[1] = "";
+	bool dle_found = false;
+	bool stx_found = false;
+	bool etx_found = false;
+	bool data_found = false;
+
+	memset(data_buffer, 0, 3);
+
+	do {
+		bReadRC =	ReadFile(m_hCom, &byte_data, 1, &iBytesRead, NULL);
+		if (strncmp(byte_data, DLE,1) == 0)
+			dle_found = true;
+
+		if (strncmp(byte_data, STX,1) == 0)
+			stx_found = true;
+
+
+		if (dle_found && stx_found)
+		{
+			int count = 0;
+			do {
+				bReadRC = ReadFile(m_hCom, &byte_data, 1, &iBytesRead, NULL);
+				if (strncmp(byte_data, ETX, 1) == 0)
+					etx_found = true;
+				if((etx_found == false) && count < DATA_SIZE)
+				{ 
+					data_buffer[count] = byte_data[0];
+					count++;
+				}
+
+				if ((count > DATA_SIZE) || (iBytesRead == 0))
+					break;
+			} while ((etx_found == false));
+
+			if (!etx_found && (iBytesRead == 0))
+			{
+				data_found = false;
+				break;
+			}
+			else
+			{
+				data_found = true;
+				break;
+			}
+
+		}
+	} while (iBytesRead );
+	
+	return data_buffer;
 }
 void UART_Configuration::write(CString sendString)
 {

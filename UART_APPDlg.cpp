@@ -13,6 +13,31 @@
 #define new DEBUG_NEW
 #endif
 
+const char LED1OFF_RECEIVE[3] = { 0x43, 0x01, 0x00 };
+const char LED1ON_RECEIVE[3] = { 0x43, 0x01, 0x01 };
+const char LED1INV_RECEIVE[3] = { 0x43, 0x01, 0x02 };
+
+const char LED2OFF_RECEIVE[3] = { 0x43, 0x01, 0x00 };
+const char LED2ON_RECEIVE[3] = { 0x43, 0x01, 0x01 };
+const char LED2INV_RECEIVE[3] = { 0x43, 0x01, 0x02 };
+
+const char LED3OFF_RECEIVE[3] = { 0x43, 0x01, 0x00 };
+const char LED3ON_RECEIVE[3] = { 0x43, 0x01, 0x01 };
+const char LED3INV_RECEIVE[3] = { 0x43, 0x01, 0x02 };
+
+
+const char LED1OFF_SEND[3] = { 0x43, 0x01, 0x00 };
+const char LED1ON_SEND[3] = { 0x43, 0x01, 0x01 };
+const char LED1INV_SEND[3] = { 0x43, 0x01, 0x02 };
+
+const char LED2OFF_SEND[3] = { 0x43, 0x01, 0x00 };
+const char LED2ON_SEND[3] = { 0x43, 0x01, 0x01 };
+const char LED2INV_SEND[3] = { 0x43, 0x01, 0x02 };
+
+const char LED3OFF_SEND[3] = { 0x43, 0x01, 0x00 };
+const char LED3ON_SEND[3] = { 0x43, 0x01, 0x01 };
+const char LED3INV_SEND[3] = { 0x43, 0x01, 0x02 };
+
 static UINT BASED_CODE indicators[] =
 {
 	IDS_STATUS,
@@ -328,15 +353,22 @@ UINT receiveThread(void* class_ptr)
 
 void CUARTAPPDlg::readRXData()
 {
-	CString readData = m_uart_config.read();
+	char* str = m_uart_config.read();
+	CString readData = CString(str);
 	CEdit* m_editTerminal = (CEdit*)GetDlgItem(IDC_EDIT_TERMINAL);
 
 	// get the initial text length
 	int nLength = m_editTerminal->GetWindowTextLength();
+
+	
+		
 	// put the selection at the end of text
 	m_editTerminal->SetSel(nLength, nLength);
 	// replace the selection
-	m_editTerminal->ReplaceSel(readData);
+	if (strcmp(str, LED1ON_RECEIVE) == 0)
+		m_editTerminal->ReplaceSel(CString("LED1ondata received"));
+	else
+		m_editTerminal->ReplaceSel(readData);
 
 
 }
@@ -388,7 +420,7 @@ void CConfigureDlg::OnBnClickedOk()
 	CString com_name;
 	int index = m_COMPORT->GetCurSel();
 	m_COMPORT->GetLBText(index, com_name);
-	ptr_uart_config->setBaudRate(com_name);
+	ptr_uart_config->setComPort(com_name);
 
 	CComboBox* m_BAUDRATE = (CComboBox*)GetDlgItem(IDC_COMBO_BAUDRATE);
 	CString baud_rate;
